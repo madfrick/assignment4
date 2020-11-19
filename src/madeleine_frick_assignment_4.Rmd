@@ -1,9 +1,10 @@
 ---
 title: "Maddie Frick Assignment 4"
 author: "MaddieFrick"
-date: "11/18/2020"
+date: "11/19/2020"
 output: html_document
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
@@ -14,77 +15,101 @@ library(palmerpenguins)
 library(ggbeeswarm)
 library(kableExtra)
 library(here)
+library(lubridate)
+
+rm(list=ls()) #clear the environment
+```
+## a) Introduction
+Hello this is my introduction to what this is exploring and all of that shit yay
+
+## b) Data and Analyses
+Hello this is where i describe the data and overview the analysis and stuff
+
+
+## c) Exploratory findings
+
+
+### i) Annual juvenile hare trap counts
+
+```{r}
+hares<-read.csv(here("data","bonanza_hares.csv")) #read in the dataset
 ```
 
 
 ```{r}
-hares<-read.csv(here("data","bonanza_hares.csv"))
+#subset the data into just juveniles 
+juvhare <- hares %>% #take the entire dataset
+  filter(age=="j") %>% #select only the juvenile hares
+  mutate(date = mdy(date)) %>% #the date is not in date format yet; this puts it in date format
+  mutate(year = year(date)) #make a new column with only the year so that we can call the annual juv hare counts
 ```
 
 
 ```{r}
-juvhare <- hares %>% 
-  filter(age=="j") %>% 
-  mutate(date = mdy(date)) %>% 
-  mutate(year = year(date))
+#count the total number of juveniles during each year
+juvharebyyear <- juvhare %>% #take the juv dataset
+  group_by(year) %>% #group them by the year column
+  summarize(trappings = n()) #count the number of trappings per year
+
+juvharebyyear$mean <- mean(juvharebyyear$trappings) #add the mean to the table
+juvharebyyear$median <- median(juvharebyyear$trappings) #add the median to the table
+juvharebyyear$max <- max(juvharebyyear$trappings) #add the max
+juvharebyyear$min <- min(juvharebyyear$trappings) #add the min
+
 ```
 
 
 ```{r}
-juvharebyyear <- juvhare %>% 
-  group_by(year) %>% 
-  summarize(trappings = n())
-
-juvharebyyear$mean <- mean(juvharebyyear$trappings)
-juvharebyyear$median <- median(juvharebyyear$trappings)
-```
-
-
-```{r}
+#create a finalized data visualization
 ggplot(data = juvharebyyear, aes(x = year, y = trappings)) +
   geom_point(size = 2) +
+  labs(x = "Year",
+       y = "Trappings",
+       title = "Annual Juvenile Hare Trappings",
+       caption = "This graph shows a count of the total number of trapped hares each year between the years of 1999 to 2012.") +
   theme_light()
+  
+
 ```
+
+According to this graph, it looks like the amount of trappings per year decreased by 2001, and then fluctuated throughout the years of 2001-2012. The maximum number of trappings was in 1999 with a total of 126, and the minimum was in 2010 with two trappings. The mean number of trapped hares was 31.5 and the median was 18.5. There was a general trend of an initial decrease but not really any trend past 2001. I would suggest to do a more even number of hare trappings every year in order to standardize the juvenile hare population in future analyses. This would give a more accurate and consistent representation of the hare populations in every year, as a representative sample of 2 in 2010 will not cover the population very well. 
+
+
+### ii) Visualize juvenile hare weights
+
+Create finalized data visualization in which juvenile weights by sex and site are compared.
 
 
 ```{r}
-ggplot(data = juvhare, aes(x = grid, y = weight)) +
-  geom_point(size = 2) +
-  facet_wrap(~sex) +
-  theme_light()
 
-# ggplot() +
-#   geom_beeswarm(data = penguin_f, 
-#                 aes(x = species, 
-#                     y = flipper_length_mm,
-#                     ),
-#                 size = 3,
-#                 alpha = 0.6,
-#                 pch = 16,
-#                 color = "gray70") +
-#   scale_x_discrete(labels = c("Adelie", "Chinstrap", "Gentoo")) +
-#   geom_point(data = penguin_f_summary, aes(x = species, y = mean_flipper_length), 
-#              color = "firebrick",
-#              size = 4) +
-#   geom_errorbar(data = penguin_f_summary, 
-#                 aes(x = species, 
-#                     ymin = mean_flipper_length - sd_flipper_length,
-#                     ymax = mean_flipper_length + sd_flipper_length),
-#                 color = "firebrick",
-#                 width = 0.1) +
-#   theme_light()
+labels <- c(f = "Female", m = "Male") #make a labels named vector that maps original names to new names for the facet
+ggplot() +
+  geom_beeswarm(data = juvhare, #make a beeswarm plot
+                aes(x = grid, #x axis is the site, or grid
+                    y = weight, #y axis is the weight 
+                    ),
+                size = 3,
+                alpha = 0.6,
+                pch = 16,
+                color = "blue") +
+  facet_wrap(~sex, labeller = labeller(sex = labels)) + #make three different graphs according to the sex
+  labs(x = "Site",
+       y = "Weight (g)",
+       title = "Juvenile Hare Weights by Sex and Site") +
+  theme_light() #add a theme!
 ```
 
+This beeswarm plot tells me that the sex and site do not make much of a difference on the hare weights. In the bonrip site, the male hares seem to be a little bit heavier than the females in bonrip, but otherwise the weights are widespread at all three sites for both the male and the female hares. I am showing the audience the straight data because the summary statistics do not always tell all of the information. 
+
+
+### iii) Juvenile weight comparison
 
 ```{r}
-#make a new one without na
-juvharenona <- hares %>% 
-  filter(age=="j",
-         weight != "NA") %>% 
-  mutate(date = mdy(date)) %>% 
-  mutate(year = year(date))
+#take out the hares without the NA weights included
+juvharewt <- juvhare %>% 
+  filter(weight != "NA")
 
-juvweightcom <- juvhare %>% 
+harewt <- juvharewt %>% 
   group_by(sex) %>% 
   summarize(mean = mean(weight, na.rm = TRUE),#finds the mean of the size measurements
             median = median(weight, na.rm = TRUE), #same but ^
@@ -97,13 +122,16 @@ juvweightcom <- juvhare %>%
                       "Sample Size")) %>% 
   kable_styling()
 
-juvweightcom
+```
+This table shows the mean, median, standard deviation, and sample size of the juvenile male and female snowshoe hares included in this study.
+
+```{r}
+harewt
 ```
 
 
-```{r}
+```{r, include = FALSE}
 # Look at it:
-
 # Histograms
 ggplot(data = juvhare, aes(x = weight)) +
   geom_histogram(bins = 12) +
@@ -116,31 +144,175 @@ ggplot(data= juvhare, aes(sample = weight)) +
 ```
 
 
-```{r}
-#iii
-hare_f <- juvhare %>% 
+```{r, include = FALSE}
+hare_f <- juvhare %>% #making a vector of the females
   filter(sex == "f") %>% 
   pull(weight)
 
-hare_m <- juvhare %>% 
+hare_f<- hare_f[!is.na(hare_f)] #taking out the NA values
+
+hare_m <- juvhare %>% #making a vector of the males
   filter(sex == "m") %>% 
   pull(weight)
 
-hare_NA <- juvhare %>% 
-  filter(sex == "NA") %>% 
-  pull(weight)
+hare_m<- hare_m[!is.na(hare_m)] #taking out the NA values
 
-hare_ttest <- t.test(hare_f, hare_m)
+
+hare_ttest <- t.test(hare_f, hare_m) #run a t test
 hare_ttest
 
-hare_cohen <- cohen.d(hare_f, hare_m)
+hare_cohen <- cohen.d(hare_f, hare_m) #run the cohen's d test
 hare_cohen
+```
+The actual difference in means of the male and female hares is 90.468. The mean body weight of the female hares was 855.39g and the males was 945.86g. I ran a two sample t test and cohen's d test on female and male hare weights. There was a significant different in body mass, and a small effect size (Cohen's d = -0.2904674). The resulting degrees of freedom was 325.02. The p value, the probability that we could have gotten sample means that are least as different as these if the null hypothesis (that they were pulled from populations with the same mean) was true is 0.007093. This means there is a .7% chance we could have gotten these from random chance if they were pulled from populations from the same mean, showing that sex probably has a significant effect on the weight of the hares. The cohen.d test showed us that the d estimate, the effect size, was -0.2904674, a small effect size of the sex of the hare on their weight.
 
+
+### iv) Relationship between juvenile weight and hind foot length
+```{r}
+#explore the relationship
+ggplot(data = juvhare, aes(x = hindft, y = weight)) +
+  geom_point() + #the data looks somewhat linear
+  labs(x = "Hind Foot Length (mm)",
+       y = "Weight (g)",
+       title = "Juvenile Weight and Hind Foot Length Relationship",
+       caption = "This is an exploratory graph visualizing the relationship between juvenile hare weight and hind foot length" )
+```
+In this exploratory visualization, it looks like a linear relationship does make sense. The points are not exactly linear and the spread grows as the hind foot length increases, but the relationship is still somewhat linear, letting us use a linear model. Now I can model it using `lm()`.
+
+
+```{r}
+# create a linear model, stored as penguin_lm:
+hare_lm <- lm(hindft ~ weight, data = juvhare)
+# Return the complete overview:
+summary(hare_lm)
+```
+
+**Check the Week 6 Part 2 lecture video** for information about how to interpret different pieces of this output, but a couple to highlight: 
+
+- Both the intercept and flipper_length_mm coefficients are significantly different from zero (not super interesting)
+- The Multiple R^2^ value is 0.759 - meaning that 75.9% of variance in body mass is explained by flipper length
+
+### C. Access model outputs
+
+We can access the coefficients for the model using:  
+
+- The slope is `r round(hare_lm$coefficient[2],2)` (g / mm)
+- The y-intercept is `r round(hare_lm$coefficient[1],2)` (g)
+- The full equation is mass = `r round(hare_lm$coefficient[2],2)`*(hindft) + (`r round(hare_lm$coefficient[1],2)`)
+
+**But** trying to get all of the statistical information from the `summary()` function would be kind of a mess. 
+
+We can use the `broom::tidy()` function to get the model outputs in nice data frame format: 
+
+```{r}
+penguin_lm_tidy <- broom::tidy(penguin_lm)
+```
+
+Look at the output format by calling `penguin_lm_tidy` in the Console. Note that it's a nice table of all model outputs, which we can then refer to later on. 
+
+Some examples: 
+
+```{r}
+# Get the intercept: 
+penguin_int <- penguin_lm_tidy$estimate[1]
+penguin_int
+
+# Then to get the flipper_length coefficient:
+penguin_coef <- penguin_lm_tidy$estimate[2]
+penguin_coef
+```
+
+What about getting some other model information (degrees of freedom, F-statistic, p-value, etc.)?
+
+Many of these statistical outcomes can be accessed more easily using `broom::glance()`. 
+
+```{r}
+# Metrics at a glance: 
+penguin_lm_out <- broom::glance(penguin_lm)
+penguin_lm_out
+```
+
+We can use the results of both to write a statement about the model that will **automatically update** if anything about the model changes! Make sure to look at the .Rmd (not just this knitted html) to learn how to reference the outputs automatically in text. For example: 
+
+"Simple linear regression was used to explore the relationship between penguin flipper length (mm) and body mass (g) across all three penguin species, and including both male and female penguins. A significant regression model was found ($\beta$ = `r round(penguin_coef,3)`, F(`r penguin_lm_out$df`,`r penguin_lm_out$df.residual`) = `r round(penguin_lm_out$statistic,1)`, p < 0.001) with an R^2^ of `r round(penguin_lm_out$r.squared,3)`."
+
+**Note:** This might seem *really* tedious to write out, but the advantages are worth it. All values will be automatically updated when the model is updated! Reproducible and way less opportunity for human error. Plus, once you have this template statement made, you can reuse it for future regression models and just replace `penguin_lm_out` and `penguin_coef` with the appropriate objects for your new model! 
+
+Note that I use "p < 0.001" here if the p-value is very small - this is somewhat standard. 
+
+### D. Explore model assumptions
+
+Recall that we have assumptions for linear regression we need to explore, some related to the residuals.
+
+- Linearly related variables (CHECK - already looked & thought hard)
+- Normally distributed *residuals*
+- Homoscedasticity (constant residuals variance)
+- iid residuals (no serial correlation) - more often a concern in time series data
+
+Use the `plot()` function on the model, which will automatically create four useful visualizations to consider assumptions! 
+
+```{r}
+plot(penguin_lm)
+```
+
+Notice that four plots show up. What do they show? Make sure to watch Part 2 of the lecture, which discusses how we can interpret each of these diagnostic plots. 
+
+- **The first one**: fitted values vs. residuals 
+- **The second one**: QQ-plot for residuals 
+- **The third one**: another way of looking at fitted vs. residuals (these are just standardized residuals, but you can interpret it the same way)
+- **The fourth one**: Cook's distance, a measure of "influence" or "leverage" that individual points have on the model - often considered a way to explore outliers. 
+
+See the Week 6 Part 2 Lecture video for more information about how to interpret these outcomes, but in summary: graphs 1 & 3 are useful for thinking about homoscedasticity; graph 2 (QQ plot) helps us consider normality of residuals; graph 4 reveals the Cook's distance (a measure of how much leverage any single observation has on the model).
+
+### E. Visualize the model
+
+Now that we've explore the assumptions and have decided that linear regression is a valid tool to describe the relationship between flipper length and body mass, let's look at the model.
+
+- Use `geom_smooth(method = "lm")` to add a linear model to an existing scatterplot
+
+- Use `stat_cor()` and/or `stat_regline_equation()` to add equation information directly to the plot panel, at an x- and y-position that you specify (and yes, you can mess with the digits & appearance here)
+
+```{r}
+
+ggplot(data = penguins, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm",
+              color = "red",
+              size = 0.5,
+              fill = "gray10",
+              alpha = 0.5) +
+  theme_light() +
+  ggpubr::stat_regline_equation(label.x = 180, label.y = 5700)
+  
+```
+
+### F. Find Pearson's *r* for correlation: 
+
+In lecture we talked about the coefficient of determination, R^2^, which tells us how much of the variance in the dependent variable is explained by the model. 
+
+We might also want to explore the strength of the correlation (degree of relationship) between two variables which, for two linearly related continuous variables, can be expressed using Pearson's *r*. 
+
+Pearson's *r* ranges in value from -1 (perfectly negatively correlated - as one variable increases the other decreases) to 1 (perfectly positively correlated - as one variable increases the other increases). A correlation of 0 means that there is no degree of relationship between the two variables. 
+
+Typical guidelines look something like this (there's wiggle room in there): 
+
+- *r* = 0: no correlation
+- *r* < |0.3|: weak correlation
+- *r* between |0.3| and |0.7|: moderate correlation
+- *r* > |0.7|: strong correlation
+
+We'll use the `cor.test()` function, adding the two vectors (`flipper_length_mm` and `body_mass_g`) as the arguments. The function reports the Pearson's *r* value, and performs a hypothesis test with null hypothesis that the correlation = 0. 
+
+```{r}
+penguins_cor <- cor.test(penguins$flipper_length_mm, penguins$body_mass_g)
+```
+
+Here, we see that there is a strong positive correlation between penguin flipper length and body mass (*r* = `r round(penguins_cor$estimate,2)`, t(`r penguins_cor$parameter`) = `r round(penguins_cor$statistic,2)`, p < 0.001). 
+
+**Note**: Once you have a "template" statement, you can just replace `penguins_cor` here with whatever your correlation analysis is stored as! You don't need to recreate the wheel every time! 
+
+## END LAB - CONGRATULATIONS!
 
 
 ```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
-
 
