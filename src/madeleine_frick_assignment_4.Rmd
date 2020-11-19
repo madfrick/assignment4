@@ -13,27 +13,12 @@ library(broom)
 library(palmerpenguins)
 library(ggbeeswarm)
 library(kableExtra)
+library(here)
 ```
+
+
 ```{r}
 hares<-read.csv(here("data","bonanza_hares.csv"))
-```
-
-
-```{r}
-juvharebyyear <- hares %>% 
-  filter(age=="j") %>% 
-  mutate(date = mdy(date)) %>% 
-  mutate(year = year(date)) %>% 
-  group_by(year) %>% 
-  summarize(trappings = n())
-
-juvharebyyear$mean <- mean(juvharebyyear$trappings)
-juvharebyyear$median <- median(juvharebyyear$trappings)
-
-
-ggplot(data = juvharebyyear, aes(x = year, y = trappings)) +
-  geom_point(size = 2) +
-  theme_light()
 ```
 
 
@@ -41,16 +26,121 @@ ggplot(data = juvharebyyear, aes(x = year, y = trappings)) +
 juvhare <- hares %>% 
   filter(age=="j") %>% 
   mutate(date = mdy(date)) %>% 
-  mutate(year = year(date)) %>% 
-  group_by(grid) 
+  mutate(year = year(date))
+```
 
 
+```{r}
+juvharebyyear <- juvhare %>% 
+  group_by(year) %>% 
+  summarize(trappings = n())
+
+juvharebyyear$mean <- mean(juvharebyyear$trappings)
+juvharebyyear$median <- median(juvharebyyear$trappings)
+```
+
+
+```{r}
+ggplot(data = juvharebyyear, aes(x = year, y = trappings)) +
+  geom_point(size = 2) +
+  theme_light()
+```
+
+
+```{r}
 ggplot(data = juvhare, aes(x = grid, y = weight)) +
   geom_point(size = 2) +
   facet_wrap(~sex) +
   theme_light()
-  
+
+# ggplot() +
+#   geom_beeswarm(data = penguin_f, 
+#                 aes(x = species, 
+#                     y = flipper_length_mm,
+#                     ),
+#                 size = 3,
+#                 alpha = 0.6,
+#                 pch = 16,
+#                 color = "gray70") +
+#   scale_x_discrete(labels = c("Adelie", "Chinstrap", "Gentoo")) +
+#   geom_point(data = penguin_f_summary, aes(x = species, y = mean_flipper_length), 
+#              color = "firebrick",
+#              size = 4) +
+#   geom_errorbar(data = penguin_f_summary, 
+#                 aes(x = species, 
+#                     ymin = mean_flipper_length - sd_flipper_length,
+#                     ymax = mean_flipper_length + sd_flipper_length),
+#                 color = "firebrick",
+#                 width = 0.1) +
+#   theme_light()
+```
+
+
+```{r}
+#make a new one without na
+juvharenona <- hares %>% 
+  filter(age=="j",
+         weight != "NA") %>% 
+  mutate(date = mdy(date)) %>% 
+  mutate(year = year(date))
+
+juvweightcom <- juvhare %>% 
+  group_by(sex) %>% 
+  summarize(mean = mean(weight, na.rm = TRUE),#finds the mean of the size measurements
+            median = median(weight, na.rm = TRUE), #same but ^
+            sd = sd(weight, na.rm = TRUE), 
+            n = n()) %>% 
+  kable(col.names = c("Sex",
+                      "Mean",
+                      "Median", 
+                      "Standard Deviation",
+                      "Sample Size")) %>% 
+  kable_styling()
+
+juvweightcom
+```
+
+
+```{r}
+# Look at it:
+
+# Histograms
+ggplot(data = juvhare, aes(x = weight)) +
+  geom_histogram(bins = 12) +
+  facet_wrap(~sex)
+
+# QQ Plots
+ggplot(data= juvhare, aes(sample = weight)) +
+  geom_qq() +
+  facet_wrap(~sex)
+```
+
+
+```{r}
+#iii
+hare_f <- juvhare %>% 
+  filter(sex == "f") %>% 
+  pull(weight)
+
+hare_m <- juvhare %>% 
+  filter(sex == "m") %>% 
+  pull(weight)
+
+hare_NA <- juvhare %>% 
+  filter(sex == "NA") %>% 
+  pull(weight)
+
+hare_ttest <- t.test(hare_f, hare_m)
+hare_ttest
+
+hare_cohen <- cohen.d(hare_f, hare_m)
+hare_cohen
+
+
 
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
