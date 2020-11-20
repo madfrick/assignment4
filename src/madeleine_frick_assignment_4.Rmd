@@ -178,10 +178,11 @@ ggplot(data = juvhare, aes(x = hindft, y = weight)) +
        title = "Juvenile Weight and Hind Foot Length Relationship",
        caption = "This is an exploratory graph visualizing the relationship between juvenile hare weight and hind foot length" )
 ```
+
 In this exploratory visualization, it looks like a linear relationship does make sense. The points are not exactly linear and the spread grows as the hind foot length increases, but the relationship is still somewhat linear, letting us use a linear model. Now I can model it using `lm()`.
 
 
-```{r}
+```{r, include = FALSE}
 # create a linear model, stored as penguin_lm:
 hare_lm <- lm(hindft ~ weight, data = juvhare)
 # Return the complete overview:
@@ -203,6 +204,14 @@ hare_lm_out
 
 plot(hare_lm)
 
+
+
+hare_cor <- cor.test(juvhare$hindft, juvhare$weight)
+hare_cor
+```
+
+
+```{r}
 ggplot(data = juvhare, aes(x = hindft, y = weight)) +
   geom_point(size = 2) +
   geom_smooth(method = "lm",
@@ -212,10 +221,6 @@ ggplot(data = juvhare, aes(x = hindft, y = weight)) +
               alpha = 0.5) +
   theme_light() +
   ggpubr::stat_regline_equation(label.x = 180, label.y = 5700)
-
-hare_cor <- cor.test(juvhare$hindft, juvhare$weight)
-hare_cor
-
 ```
 
 Simple linear regression was used to explore the relationship between hare foot length (mm) and weight (g) across both the male and female hares. A significant regression model was found ($\beta$ = `r round(hare_coef,3)`, F(`r hare_lm_out$df`,`r hare_lm_out$df.residual`) = `r round(hare_lm_out$statistic,1)`, p < 0.001) with an R^2^ of `r round(hare_lm_out$r.squared,3)`.The Multiple R^2^ value, the proportion of the variance in the dependent variable (weight) that was predictable from the independent variable (hind foot length) was 0.2988. This means that ~30% of the variance in the weight was predictable from the hind foot length. Both the intercept and the weight coefficients were significantly different than 0. The assumptions that we made doing this linear regression were linearity of the relationship between these factors, which was seen in our exploratory graph above, independence of errors, homoscedasticity of the errors, and normality of the error distribution. It would be better to include the hare sex as another variable because we know that the mean weights are different with male and female penguins, even though it was a small effect size. After using the plot() function, graphs 1 and 3 show us that the errors are not very homeodastic,the QQ plot showed us that the residuals were somewhat normal, and graph 4 showed Cook's distance. I would be a little bit concerned homoscedasticity. Here, we see that there is a strong positive correlation between hare hind foot length and weight (*r* = `r round(hare_cor$estimate,2)`, t(`r hare_cor$parameter`) = `r round(hare_cor$statistic,2)`, p < 0.001). 
@@ -223,7 +228,10 @@ Simple linear regression was used to explore the relationship between hare foot 
 
 
 Summary:
+
 - ~30% of the variance in the weight was predictable from the hind foot length
+
 - a significant regression model was found
+
 - there was a positive correlation between hind foot length and weight
 
